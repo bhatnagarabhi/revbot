@@ -1,0 +1,19 @@
+version: '3.8'
+services:
+  llm-master:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all # This is equivalent to --gpus=all
+              capabilities: [gpu] # Required for GPU access
+    restart: unless-stopped
+
+volumes:
+  ollama:
