@@ -1,0 +1,22 @@
+# Ignore all files in the 'target' directory
+target/
+
+# Ignore Maven local repository
+.m2/
+
+# Ignore Jenkins configuration and workspace
+.jenkins/
+*.workspace
+*.lock
+
+# Ignore logs and temporary files
+*.log
+*.tmp
+
+# Ignore IDE-specific files
+.idea/
+.vscode/
+
+# Ignore Python cache files
+__pycache__/
+*.pyc
