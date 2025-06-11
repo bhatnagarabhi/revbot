@@ -268,7 +268,7 @@ if __name__ == "__main__":
         print("\n--- Demonstrating Retrieval ---")
 
         # Example query: Simulating a user's question about the codebase
-        query_text = "Generate a .gitignore file for my codebase"
+        query_text = "How does the main application process data?"
         # You can change this to another query to test retrieval, e.g.:
         # query_text = "How does the main application process data?"
 

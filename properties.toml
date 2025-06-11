@@ -1,0 +1,17 @@
+# application configuration
+[application]
+codebase_path = "codebase"
+
+# Shredder config
+[shredder]
+ignorepaths = [
+    '__pycache__',
+    '.git'
+]
+ignoreextensions=[
+    '.png',
+    '.jpeg',
+    '.class',
+    '.pyc',
+    '.gem'
+]
