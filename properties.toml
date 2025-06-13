@@ -1,0 +1,16 @@
+# application configuration
+[application]
+num_threads=4
+codebase_path = "codebase"
+ignored_paths = [
+    '__pycache__',
+    '.git',
+    'classes',
+    'test-classes'
+]
+ignored_extensions=[
+    '.png',
+    '.jpeg',
+    '.pyc',
+    '.gem'
+]

@@ -1,0 +1,7 @@
+chromadb
+gitpython
+tree-sitter
+tree-sitter-python
+requests
+scikit-learn
+toml
