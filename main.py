@@ -82,7 +82,7 @@ class Shredder:
         try:
             with open(file_path, 'r') as f:
                 meta_file_path = f.name
-                file_content = f.readlines()
+                file_content = f.read()
                 if not file_content.strip():
                     print(f"[INFO] Skipping empty or whitespace-only file: {meta_file_path}")
                     return None
