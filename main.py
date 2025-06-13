@@ -1,5 +1,7 @@
 from curses import meta
 import os
+import random
+from time import sleep
 import toml
 import hashlib
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -18,6 +20,7 @@ class Shredder:
         self.CODEBASE_PATH = self.config['application']['codebase_path']
         self.IGNORED_PATHS = self.config['application']['ignored_paths']
         self.IGNORED_EXTENSIONS = self.config['application']['ignored_extensions']
+        self.NUM_THREADS = self.config['application']['num_threads']
         print(f"[INFO] Using code directory: {self.CODEBASE_PATH}")
         print(f"[INFO] Ignoring paths: {self.IGNORED_PATHS}")
         print(f"[INFO] Ignoring extensions: {self.IGNORED_EXTENSIONS}")
@@ -68,28 +71,75 @@ class Shredder:
                     full_file_path = os.path.join(root, filename)
                     found_files.append(full_file_path)
         return found_files
+            
+    def single_file_task(self, file_path: str) -> dict:
+        """
+        Summary: Template function for threads to execute
+
+        Args:
+            file (str): File to process
+        """
+        try:
+            with open(file_path, 'r') as f:
+                meta_file_path = f.name
+                file_content = f.readlines()
+                if not file_content.strip():
+                    print(f"[INFO] Skipping empty or whitespace-only file: {meta_file_path}")
+                    return None
+                file_uuid = self.generate_md5(meta_file_path)
+                print(f"[INFO] Consuming: {meta_file_path}")
+                print(f"[INFO] Generated md5: {file_uuid}")
+                return {
+                    "content": file_content,
+                    "metadata": {
+                        "file_path": meta_file_path,
+                        "file_name": os.path.basename(meta_file_path),
+                        "uuid": file_uuid
+                    }
+                }
+        except FileNotFoundError:
+            print(f"[ERROR] File not found: {file_path}")
+            return None
+        except Exception as e:
+            print(f"[ERROR] Error occurred while reading {file_path}: {e}")
+            return None
     
     def chunk_files(self, file_list: list) -> list:
         """
         Summary:
-            Read and chunk files
+            Manages the multithreaded reading and chunking of files.
+            This is the "runner" that orchestrates the concurrent execution
+            of `_process_single_file_task`.
 
         Args:
-            file_list (list): List of files to recurse through
+            file_list (List[str]): List of file paths to process.
+
+        Returns:
+            List[Dict]: A list of dictionaries, where each dictionary represents a chunk.
+                        Each dictionary contains 'content' and 'metadata'.
         """
-        if file_list == []:
-            raise RuntimeError(f"[ERROR] Could not find valid list of files in {self.CODEBASE_PATH}.")
+        self.processed_chunks = []
+        if not file_list:
+            raise RuntimeError(f"[ERROR] No valid files available for {self.CODEBASE_PATH}.")
+        print(f"[INFO] Starting multithreaded file processing for {len(file_list)} files...")
         try:
-            for file in file_list:
-                with open(file, 'r') as f:
-                    meta_file_path = f.name
-                    uuid = self.generate_md5(meta_file_path)
-                    file_content = f.read()
-                    print(f"[INFO] Consuming: {meta_file_path}")
-                    print(f"[INFO] Generated md5: {uuid}")
-                    
+            with ThreadPoolExecutor(max_workers=self.NUM_THREADS) as executor:
+                future_to_filepath = {
+                    executor.submit(self.single_file_task, file_path): file_path
+                    for file_path in file_list
+                }
+            for future in as_completed(future_to_filepath):
+                file_path = future_to_filepath[future]
+                try:
+                    chunk_data = future.result()
+                    if chunk_data is not None:
+                        self.processed_chunks.append(chunk_data)
+                except Exception as e:
+                    print(f"[ERROR] Exception occurred while processing {file_path}: {e}")
+            print(f"[INFO] Finished multithreaded file processing. Total {len(self.processed_chunks)} valid chunks generated.")
         except Exception as e:
-            print(f"[ERROR] Error occured while reading files - {e}")
+            print(f"[ERROR] An unhandled error occurred in the multithreaded runner: {e}")
+            raise
 
 if __name__ == "__main__":
     config_path = 'properties.toml'
